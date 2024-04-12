@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- Ajout de Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+        .dark-navbar {
+            background-color: #f8f9fa; /* Couleur de fond légèrement plus sombre */
+            color: white; /* Texte en blanc pour un meilleur contraste */
+        }
+        .light-card {
+            background-color: #f8f9fa; /* Couleur de fond gris clair */
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row mt-3">
+            <div class="col-md-3">
+                <div class="card dark-navbar"> <!-- Utilisation de la classe dark-navbar -->
+                    <div class="card-header">
+                       <h4> Dashboard </h4>
+                    </div>
+                    <div class="card-body">
+                        <!-- Bouton pour ouvrir le dialogue -->
+                        <button class="btn btn-primary mb-3" onclick="openDialog()">Ajouter une salle</button>
+
+                        <!-- Bouton pour afficher la liste des salles -->
+                        <button class="btn btn-secondary" onclick="toggleSalleList()">Afficher les salles</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-9">
+                <div class="card light-card"> <!-- Utilisation de la classe light-card -->
+                    <div class="card-body">
+                        <!-- Tableau pour afficher les salles -->
+                        <table id="salleTable" style="display: none;">
+                            <thead>
+                                <tr>
+                                    <th>Numéro</th>
+                                    <th>Capacité</th>
+                                    <th>Équipements</th>
+                                    <th>Disponible</th>
+                                    <th>Image</th>
+                                    <th>Actions</th> <!-- Nouvelle colonne pour les actions -->
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Les salles seront ajoutées ici dynamiquement -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dialogue pour ajouter une salle -->
+    <dialog id="ajoutesalleDialog">
+        <form id="addRoomForm" action="/salle/add" method="POST" enctype="multipart/form-data">
+            <label for="numero">Numéro de salle:</label>
+            <input type="text" id="numero" name="numero" required><br>
+        
+            <label for="capacite">Capacité:</label>
+            <input type="number" id="capacite" name="capacite" required><br>
+        
+            <label for="equipements">Équipements:</label>
+            <input type="text" id="equipements" name="equipements"><br>
+        
+            <label for="image">Image:</label>
+            <input type="file" id="image" name="image" accept="image/*"><br>
+
+            <label for="disponible">Disponible:</label>
+            <input type="checkbox" id="disponible" name="disponible" value="true" checked>
+        
+            <button type="button" onclick="submitForm()">Ajouter</button>
+            <button type="button" onclick="closeDialog()">Annuler</button>
+        </form>
+    </dialog>
+
+    <script>
+        // Fonction pour ouvrir le dialogue
+        function openDialog() {
+            document.getElementById('ajoutesalleDialog').showModal();
+        }
+
+        // Fonction pour fermer le dialogue
+        function closeDialog() {
+            document.getElementById('ajoutesalleDialog').close();
+        }
+
+        // Fonction pour soumettre le formulaire
+        function submitForm() {
+            document.getElementById('addRoomForm').submit(); // Soumettre le formulaire
+            closeDialog(); // Fermer le dialogue après avoir soumis le formulaire
+        }
+
+        // Fonction pour afficher ou masquer la liste des salles
+        function toggleSalleList() {
+            var table = document.getElementById('salleTable');
+            if (table.style.display === 'none') {
+                table.style.display = 'table';
+                loadSalleList();
+            } else {
+                table.style.display = 'none';
+            }
+        }
+
+        // Charger les salles lors du chargement de la page
+        async function loadSalleList() {
+            const response = await fetch('/salle/salles'); // Obtenir la liste des salles depuis le serveur
+            const data = await response.json(); // Convertir la réponse en JSON
+            const tableBody = document.querySelector('#salleTable tbody');
+
+            // Ajouter chaque salle au tableau
+            data.forEach(salle => {
+                const row = `
+                    <tr>
+                        <td>${salle.numero}</td>
+                        <td>${salle.capacite}</td>
+                        <td>${salle.equipements.join(', ')}</td>
+                        <td>${salle.disponible ? 'Oui' : 'Non'}</td>
+                        <td><img src="/images/${salle.image}" alt="Image de la salle" style="max-width: 100px;"></td>
+                        <td>
+                            <button class="btn btn-primary" onclick="editSalle('${salle._id}')"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-danger" onclick="deleteSalle('${salle._id}')"><i class="fa fa-trash" aria-hidden="true"></i></button>
+                        </td>
+                    </tr>
+                `;
+                tableBody.innerHTML += row;
+            });
+        }
+
+        // Fonction pour éditer une salle
+        async function editSalle(id) {
+            // Mettez en œuvre le code pour éditer une salle ici, en fonction de l'ID fourni
+            // Vous pouvez envoyer une requête PUT au serveur avec l'ID de la salle à éditer
+        }
+
+        // Fonction pour supprimer une salle
+        async function deleteSalle(id) {
+            try {
+                const response = await fetch(`/salle/salles/${id}`, {
+                    method: 'DELETE',
+                });
+                const data = await response.json();
+                alert('Salle supprimée avec succès');
+                // Recharger la liste des salles après la suppression
+                loadSalleList();
+            } catch (error) {
+                console.error('Erreur lors de la suppression de la salle:', error);
+                alert('Erreur lors de la suppression de la salle');
+            }
+        }
+    </script>
+</body>
+</html>
