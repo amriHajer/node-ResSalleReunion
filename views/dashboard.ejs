@@ -40,6 +40,9 @@
 
                         <!-- Bouton pour afficher la liste des salles -->
                         <button class="btn btn-secondary" onclick="toggleSalleList()">Afficher les salles</button>
+
+                        <!-- Bouton pour afficher la liste des réservations -->
+                        <button class="btn btn-info mt-3" onclick="toggleReservationList()">Afficher les réservations</button>
                     </div>
                 </div>
             </div>
@@ -62,6 +65,22 @@
                                 <!-- Les salles seront ajoutées ici dynamiquement -->
                             </tbody>
                         </table>
+
+                        <!-- Tableau pour afficher les réservations -->
+                        <table id="reservationTable" style="display: none;">
+                            <thead>
+                                <tr>
+                                    <th>Jour</th>
+                                    <th>Heure de début</th>
+                                    <th>Heure de fin</th>
+                                    <th>Salle</th>
+                                    <th>Actions</th> <!-- Nouvelle colonne pour les actions -->
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Les réservations seront ajoutées ici dynamiquement -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -82,14 +101,22 @@
         
             <label for="image">Image:</label>
             <input type="file" id="image" name="image" accept="image/*"><br>
-
+        
             <label for="disponible">Disponible:</label>
             <input type="checkbox" id="disponible" name="disponible" value="true" checked>
-        
+            
             <button type="button" onclick="submitForm()">Ajouter</button>
             <button type="button" onclick="closeDialog()">Annuler</button>
         </form>
+        
     </dialog>
+
+    
+
+
+
+
+
 
     <script>
         // Fonction pour ouvrir le dialogue
@@ -109,15 +136,38 @@
         }
 
         // Fonction pour afficher ou masquer la liste des salles
+        // function toggleSalleList() {
+        //     var table = document.getElementById('salleTable');
+        //     if (table.style.display === 'none') {
+        //         table.style.display = 'table';
+        //         loadSalleList();
+        //     } else {
+        //         table.style.display = 'none';
+        //     }
+        // }
         function toggleSalleList() {
-            var table = document.getElementById('salleTable');
-            if (table.style.display === 'none') {
-                table.style.display = 'table';
-                loadSalleList();
-            } else {
-                table.style.display = 'none';
-            }
-        }
+        var salleTable = document.getElementById('salleTable');
+        var reservationTable = document.getElementById('reservationTable');
+
+        // Afficher la liste des salles
+        salleTable.style.display = 'table';
+        loadSalleList(); // Charger les salles
+
+        // Cacher la liste des réservations
+        reservationTable.style.display = 'none';
+    }
+
+
+
+
+
+
+
+
+
+
+
+
 
         // Charger les salles lors du chargement de la page
         async function loadSalleList() {
@@ -163,6 +213,94 @@
             } catch (error) {
                 console.error('Erreur lors de la suppression de la salle:', error);
                 alert('Erreur lors de la suppression de la salle');
+            }
+        }
+
+
+
+
+// Fonction pour afficher ou masquer la liste des réservations
+// function toggleReservationList() {
+//             var table = document.getElementById('reservationTable');
+//             if (table.style.display === 'none') {
+//                 table.style.display = 'table';
+//                 loadReservationList(); // Charger les réservations lorsque le tableau est affiché
+//             } else {
+//                 table.style.display = 'none';
+//             }
+//         }
+
+function toggleReservationList() {
+        var salleTable = document.getElementById('salleTable');
+        var reservationTable = document.getElementById('reservationTable');
+
+        // Cacher la liste des salles
+        salleTable.style.display = 'none';
+
+        // Afficher la liste des réservations
+        reservationTable.style.display = 'table';
+        loadReservationList(); // Charger les réservations
+    }
+
+        // Fonction pour charger les réservations
+        // Fonction pour charger les réservations
+async function loadReservationList() {
+    try {
+        const response = await fetch('/reservation/'); // Obtenir toutes les réservations depuis le serveur
+        const data = await response.json(); // Convertir la réponse en JSON
+        const tableBody = document.querySelector('#reservationTable tbody');
+
+        // Vider le tableau avant d'ajouter de nouvelles données
+        tableBody.innerHTML = '';
+
+        // Ajouter chaque réservation au tableau
+        data.forEach(reservation => {
+            // Formater la date pour afficher uniquement jour, mois et année
+            const formattedDate = new Date(reservation.jour).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            });
+
+            const row = `
+                <tr>
+                    <td>${formattedDate}</td> <!-- Utiliser la date formatée ici -->
+                    <td>${reservation.heureDebut}</td>
+                    <td>${reservation.heureFin}</td>
+                    <td>${reservation.salleId}</td>
+                    <td>
+                        <button class="btn btn-primary" onclick="editReservation('${reservation._id}')"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-danger" onclick="deleteReservation('${reservation._id}')"><i class="fa fa-trash" aria-hidden="true"></i></button>
+                    </td>
+                </tr>
+            `;
+            tableBody.innerHTML += row;
+        });
+    } catch (error) {
+        console.error('Erreur lors du chargement des réservations:', error);
+        alert('Erreur lors du chargement des réservations');
+    }
+}
+
+        // Fonction pour éditer une réservation
+        async function editReservation(id) {
+            // Mettez en œuvre le code pour éditer une réservation ici, en fonction de l'ID fourni
+            // Vous pouvez envoyer une requête PUT au serveur avec l'ID de la réservation à éditer
+        }
+
+        // Fonction pour supprimer une réservation
+        async function deleteReservation(id) {
+            try {
+                const response = await fetch(`/reservation/${id}`, {
+                    method: 'DELETE',
+                });
+                const data = await response.json();
+                alert('Réservation supprimée avec succès');
+                // Recharger la liste des réservations après la suppression
+                loadReservationList();
+            } catch (error) {
+                console.error('Erreur lors de la suppression de la réservation:', error);
+                alert('Erreur lors de la suppression de la réservation');
             }
         }
     </script>

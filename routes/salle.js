@@ -20,18 +20,22 @@ const storage = multer.diskStorage({
 // Configurer le middleware Multer pour le téléchargement de fichiers
 const upload = multer({ storage: storage });
 
-salleRouter.post('/add', async (req, res) => {
+salleRouter.post('/add', upload.single('image'), async (req, res) => {
     try {
-        const { numero, capacite, equipements } = req.body; 
-        const disponible = req.body.disponible === 'on';
-
-        const nouvelleSalle = new Salle({ numero, capacite, equipements, disponible }); // Créez une nouvelle salle avec les données reçues
-        await nouvelleSalle.save(); 
+        const { numero, capacite, equipements, disponible } = req.body;
+        // Vérifier si l'image a été téléchargée
+        let image = '';
+        if (req.file) {
+            image = req.file.filename; // Récupérer le nom du fichier téléchargé
+        }
+        const nouvelleSalle = new Salle({ numero, capacite, equipements, disponible, image });
+        await nouvelleSalle.save();
         res.status(201).send('Salle ajoutée avec succès');
     } catch (error) {
         res.status(400).send(error.message);
     }
 });
+
 
 salleRouter.get('/salles', async (req, res) => {
     try {
